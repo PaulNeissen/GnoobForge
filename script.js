@@ -297,8 +297,8 @@ function findBestCharacter(allowSecondAttempt = false) {
 /* ---------- Événements ---------- */
 
 simulateButton.addEventListener("click", simulate);
-bestButton.addEventListener("click", () => findBestCharacter());
-bestMultiButton.addEventListener("click", () => findBestCharacter(true));
+bestButton.addEventListener("click", findBestCharacter);
+bestMultiButton.addEventListener("click", findBestSequence);
 commonFailButton.addEventListener("click", findCommonFailure);
 
 for (const field of [pseudoSelect, itemInput]) {
@@ -434,4 +434,112 @@ function findCommonFailure() {
     }
 
     results.replaceChildren(table);
+}
+
+/**
+ * Plus court enchaînement de tentatives menant au MAX_LEVEL.
+ * Un fail détruit l'objet (retour au STARTING_LEVEL), mais les compteurs de
+ * tentatives par (pseudo, niveau) persistent.
+ * Retourne [{ level, name, broke }, ...] ou null si rien n'est trouvé.
+ */
+function planUpgrades(names, itemId, maxNodes = 5_000_000) {
+    const nLevels = MAX_LEVEL - STARTING_LEVEL;
+
+    // table[p][l][k] = true si la k-ième tentative du pseudo p au niveau l casse
+    const table = names.map(name =>
+        Array.from({ length: nLevels }, (_, l) =>
+            predictRow(name, itemId, STARTING_LEVEL + l)));
+
+    const counters = new Array(names.length * nLevels).fill(0);
+    const path = [];
+    const maxBound = names.length * nLevels * (MAX_ATTEMPTS + 1);
+    let nodes = 0;
+    let bound = nLevels;
+
+    function dfs(l, cost) {
+        if (l === nLevels) return true;
+        if (++nodes > maxNodes) return false;
+
+        for (let p = 0; p < names.length; p++) {
+            const idx = p * nLevels + l;
+            const k = counters[idx];
+            if (k > MAX_ATTEMPTS) continue; // roll non calculée au-delà
+
+            const broke = table[p][l][k];
+            const nextL = broke ? 0 : l + 1;
+
+            // minorant : il faudra encore au moins (nLevels - nextL) tentatives
+            if (cost + 1 + (nLevels - nextL) > bound) continue;
+
+            counters[idx]++;
+            path.push({ level: STARTING_LEVEL + l, name: names[p], broke });
+
+            if (dfs(nextL, cost + 1)) return true;
+
+            path.pop();
+            counters[idx]--;
+        }
+        return false;
+    }
+
+    for (; bound <= maxBound; bound++) {
+        counters.fill(0);
+        path.length = 0;
+        if (dfs(0, 0)) return path.slice();
+        if (nodes > maxNodes) return null;
+    }
+    return null;
+}
+
+function getSortedCharacterNames() {
+    return [...new Set(getCharacterNames())].sort((a, b) => {
+        const indexA = pseudos.indexOf(a);
+        const indexB = pseudos.indexOf(b);
+
+        return (indexA === -1 ? Infinity : indexA)
+            - (indexB === -1 ? Infinity : indexB);
+    });
+}
+
+function findBestSequence() {
+    const item = findItem(itemInput.value);
+
+    if (!item) {
+        showMessage("Please select a valid item from the list.", "error");
+        return;
+    }
+
+    const names = getSortedCharacterNames();
+
+    if (!names.length) {
+        showMessage("No character available in the list.", "error");
+        return;
+    }
+
+    const path = planUpgrades(names, item.id);
+
+    if (!path) {
+        showMessage("No sequence found.", "error");
+        return;
+    }
+
+    const summary = document.createElement("div");
+    summary.className = "summary";
+
+    const title = document.createElement("strong");
+    title.textContent =
+        `Upgrade path — ${item.name} (${path.length} attempts)`;
+    summary.appendChild(title);
+
+    const list = document.createElement("ol");
+
+    for (const { level, name, broke } of path) {
+        const li = document.createElement("li");
+        li.textContent =
+            `${level} → ${level + 1} : ${name} — ${broke ? "💥 Fail" : "✅ Success"}`;
+        list.appendChild(li);
+    }
+
+    summary.appendChild(list);
+    results.replaceChildren(summary);
 }
