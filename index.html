@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gnoob's Forge — Valheim</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">VALHEIM · PREDICTOR</div>
+    <h1>⚒ GNOOB'S FORGE ORACLE</h1>
+    <div class="subtitle">By Escdemon</div>
+  </header>
+
+  <section class="panel">
+    <h2>Settings</h2>
+    <div class="fields">
+      <div>
+        <label for="pseudo">CHARACTER NAME</label>
+        <input
+          id="pseudo"
+          list="pseudoList"
+          value="CrOmAgNoN"
+          placeholder="Search for a character..."
+          autocomplete="off"
+        >
+        <datalist id="pseudoList">
+          <option value="CrOmAgNoN"></option>
+          <option value="Daemon"></option>
+          <option value="Zeeyy"></option>
+          <option value="HAALAND"></option>
+        </datalist>
+      </div>
+      
+      <div>
+        <label for="item">ITEM</label>
+        <input id="item" list="itemList" placeholder="Search for an item..." autocomplete="off">
+        <datalist id="itemList"></datalist>
+      </div>
+    </div>
+
+    <button id="simulate" type="button">⚔ SIMULATE UPGRADES</button>
+    <button id="best" type="button">🏆 BEST CHARACTERS FIRST ATTEMPT</button>
+    <button id="bestMulti" type="button">🏆 BEST CHARACTERS MULTI</button>
+    <button id="commonFail" type="button">💥 COMMON FAILURE</button>
+  </section>
+
+  <section class="panel">
+    <h2>Prediction Results</h2>
+    <div class="table-wrap" id="resultat" aria-live="polite">
+      <div class="empty">Configure the settings and run the simulation.</div>
+    </div>
+  </section>
+  <footer>GNOOB'S FORGE · VALHEIM</footer>
+</main>
+
+<script src="items.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
