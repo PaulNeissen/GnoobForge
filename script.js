@@ -456,36 +456,41 @@ function findCommonFailure() {
 function planUpgrades(names, itemId, maxNodes = 5_000_000) {
     const nLevels = MAX_LEVEL - STARTING_LEVEL;
 
-    // table[p][l][k] = true si la k-ième tentative du pseudo p au niveau l casse
     const table = names.map(name =>
         Array.from({ length: nLevels }, (_, l) =>
             predictRow(name, itemId, STARTING_LEVEL + l)));
 
     const counters = new Array(names.length * nLevels).fill(0);
+    const baseOrder = names.map((_, i) => i);
     const path = [];
     const maxBound = names.length * nLevels * (MAX_ATTEMPTS + 1);
     let nodes = 0;
     let bound = nLevels;
 
-    function dfs(l, cost) {
+    // last = index du pseudo qui vient de réussir (-1 = ordre normal)
+    function dfs(l, cost, last) {
         if (l === nLevels) return true;
         if (++nodes > maxNodes) return false;
 
-        for (let p = 0; p < names.length; p++) {
+        const order = last === -1
+            ? baseOrder
+            : [last, ...baseOrder.filter(p => p !== last)];
+
+        for (const p of order) {
             const idx = p * nLevels + l;
             const k = counters[idx];
-            if (k > MAX_ATTEMPTS) continue; // roll non calculée au-delà
+            if (k > MAX_ATTEMPTS) continue;
 
             const broke = table[p][l][k];
             const nextL = broke ? 0 : l + 1;
 
-            // minorant : il faudra encore au moins (nLevels - nextL) tentatives
             if (cost + 1 + (nLevels - nextL) > bound) continue;
 
             counters[idx]++;
             path.push({ level: STARTING_LEVEL + l, name: names[p], broke });
 
-            if (dfs(nextL, cost + 1)) return true;
+            // Succès : ce pseudo est prioritaire ; échec : retour à l'ordre normal
+            if (dfs(nextL, cost + 1, broke ? -1 : p)) return true;
 
             path.pop();
             counters[idx]--;
@@ -496,7 +501,7 @@ function planUpgrades(names, itemId, maxNodes = 5_000_000) {
     for (; bound <= maxBound; bound++) {
         counters.fill(0);
         path.length = 0;
-        if (dfs(0, 0)) return path.slice();
+        if (dfs(0, 0, -1)) return path.slice();
         if (nodes > maxNodes) return null;
     }
     return null;
