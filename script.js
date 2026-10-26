@@ -3,7 +3,7 @@
 /* ---------- Constantes ---------- */
 
 const STARTING_LEVEL = 4;
-const MAX_LEVEL = 15;
+const MAX_LEVEL_CAP = 25;
 const MAX_ATTEMPTS = 10;
 const BREAK_THRESHOLD = 0.65;
 
@@ -68,20 +68,18 @@ function predictRow(characterName, itemId, level, maxAttempts = MAX_ATTEMPTS) {
 }
 
 function predictAll(characterName, itemId) {
+    const maxLevel = getMaxLevel();
     const rows = [];
-    for (let level = STARTING_LEVEL; level < MAX_LEVEL; level++) {
+    for (let level = STARTING_LEVEL; level < maxLevel; level++) {
         rows.push({ level, breaks: predictRow(characterName, itemId, level) });
     }
     return rows;
 }
 
-/**
- * Première colonne (0 tentative) : nombre de succès consécutifs
- * en partant du premier niveau (4 → 5), jusqu'au premier échec.
- */
 function firstColumnStreak(characterName, itemId) {
+    const maxLevel = getMaxLevel();
     let streak = 0;
-    for (let level = STARTING_LEVEL; level < MAX_LEVEL; level++) {
+    for (let level = STARTING_LEVEL; level < maxLevel; level++) {
         const breaks = predictRow(characterName, itemId, level, 0)[0];
         if (breaks) break;
         streak++;
@@ -119,6 +117,22 @@ const simulateButton = document.getElementById("simulate");
 const bestButton = document.getElementById("best");
 const bestMultiButton = document.getElementById("bestMulti");
 const commonFailButton = document.getElementById("commonFail");
+const maxLevelInput = document.getElementById("maxLevel");
+
+/** Lit le champ et le borne entre STARTING_LEVEL + 1 et MAX_LEVEL_CAP. */
+function getMaxLevel() {
+    if (maxLevelInput.value.trim() === "") return MAX_LEVEL_CAP;
+
+    const n = Math.trunc(Number(maxLevelInput.value));
+    if (!Number.isFinite(n)) return MAX_LEVEL_CAP;
+
+    return Math.min(MAX_LEVEL_CAP, Math.max(STARTING_LEVEL + 1, n));
+}
+
+// À la validation / perte de focus : on affiche la valeur corrigée.
+maxLevelInput.addEventListener("change", () => {
+    maxLevelInput.value = getMaxLevel();
+});
 
 const datalistFragment = document.createDocumentFragment();
 for (const { name } of ITEMS.values()) {
@@ -236,8 +250,9 @@ function findBestCharacter(allowSecondAttempt = false) {
 
     const steps = [];
     let lastCharacter = null; // dernier pseudo utilisé avec succès
+    const maxLevel = getMaxLevel();
 
-    for (let level = STARTING_LEVEL; level < MAX_LEVEL; level++) {
+    for (let level = STARTING_LEVEL; level < maxLevel; level++) {
         // Le dernier pseudo utilisé passe en premier, les autres gardent l'ordre de priorité
         const ordered = lastCharacter
             ? [lastCharacter, ...names.filter(name => name !== lastCharacter)]
@@ -312,7 +327,7 @@ bestButton.addEventListener("click", findBestCharacter);
 bestMultiButton.addEventListener("click", findBestSequence);
 commonFailButton.addEventListener("click", findCommonFailure);
 
-for (const field of [pseudoSelect, itemInput]) {
+for (const field of [pseudoSelect, itemInput, maxLevelInput]) {
     field.addEventListener("keydown", (e) => {
         if (e.key === "Enter") simulate();
     });
@@ -391,12 +406,14 @@ function setupField(input) {
 
 setupField(pseudoSelect);
 setupField(itemInput);
+setupField(maxLevel);
 
 function findCommonFailure() {
     const matches = [];
-
+    const maxLevel = getMaxLevel();
+    
     for (const item of ITEMS.values()) {
-        for (let level = STARTING_LEVEL; level < MAX_LEVEL; level++) {
+        for (let level = STARTING_LEVEL; level < maxLevel; level++) {
             const allFail = pseudos.every(name =>
                 predictRow(name, item.id, level, 0)[0]
             );
@@ -454,7 +471,7 @@ function findCommonFailure() {
  * Retourne [{ level, name, broke }, ...] ou null si rien n'est trouvé.
  */
 function planUpgrades(names, itemId, maxNodes = 5_000_000) {
-    const nLevels = MAX_LEVEL - STARTING_LEVEL;
+    const nLevels = getMaxLevel() - STARTING_LEVEL;
 
     const table = names.map(name =>
         Array.from({ length: nLevels }, (_, l) =>
