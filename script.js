@@ -235,10 +235,16 @@ function findBestCharacter(allowSecondAttempt = false) {
     }
 
     const steps = [];
+    let lastCharacter = null; // dernier pseudo utilisé avec succès
 
     for (let level = STARTING_LEVEL; level < MAX_LEVEL; level++) {
+        // Le dernier pseudo utilisé passe en premier, les autres gardent l'ordre de priorité
+        const ordered = lastCharacter
+            ? [lastCharacter, ...names.filter(name => name !== lastCharacter)]
+            : names;
+
         // 1er attempt : un pseudo dont la colonne "0 Attempt" réussit
-        let character = names.find(name =>
+        let character = ordered.find(name =>
             !predictRow(name, item.id, level, 0)[0]
         );
         let attempt = 1;
@@ -247,10 +253,15 @@ function findBestCharacter(allowSecondAttempt = false) {
         // Aucun pseudo ne passe au 1er attempt : on regarde le 2e
         if (!character && allowSecondAttempt) {
             firstAttemptFailed = true;
-            character = names.find(name =>
+            character = ordered.find(name =>
                 !predictRow(name, item.id, level, 1)[1]
             );
             attempt = 2;
+        }
+
+        // On retient le pseudo pour le niveau suivant (sinon on garde le précédent)
+        if (character) {
+            lastCharacter = character;
         }
 
         // character = undefined si le niveau est impossible

@@ -1,18 +1,20 @@
 :root {
-  --bg: #101411;
-  --panel: #1a211d;
-  --border: #34443a;
-  --text: #e3e9df;
-  --muted: #93a397;
-  --accent: #8bd5b0;
-  --green: #183c2b;
+  --bg: #0d111a;
+  --panel: #171f2d;
+  --border: #303f58;
+  --text: #e3e9f4;
+  --muted: #96a6bd;
+  --accent: #7eafff;
   --red: #492323;
+  --background-body: #1c2c46;
+  --background-td: #222e41;
+  --button-hover: #a5c8ff;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
   padding: 40px 20px;
-  background: radial-gradient(ellipse at top, #24352b, var(--bg) 65%);
+  background: radial-gradient(ellipse at top, var(--background-body), var(--bg) 65%);
   color: var(--text);
   font: 15px/1.5 system-ui, sans-serif;
 }
@@ -58,7 +60,7 @@ button {
   letter-spacing: 1px;
   cursor: pointer;
 }
-button:hover { background: #b0f0cc; }
+button:hover { background: var(--button-hover); }
 .table-wrap { overflow-x: auto; }
 table {
   width: 100%;
@@ -81,9 +83,9 @@ td {
 td:first-child {
   text-align: left;
   font-weight: 700;
-  background: #252e28;
+  background: var(--background-td);
 }
-.success { background: var(--green); color: #8de5ad; }
+.success { color: #8de5ad; }
 .failure { background: var(--red); color: #ff9999; }
 .empty { color: var(--muted); text-align: center; padding: 30px; }
 footer { text-align: center; color: var(--muted); font-size: 12px; }
@@ -141,7 +143,7 @@ caption { caption-side: top; padding-bottom: 6px; }
 .summary-detail { margin-top: 4px; }
 
 th[scope="row"] {
-  text-align: left; font-weight: 700; background: #252e28;
+  text-align: left; font-weight: 700; background: var(--bg);
   padding: 11px 8px; border-radius: 5px;
   position: sticky; left: 0; z-index: 1;
 }
@@ -171,4 +173,9 @@ th[scope="row"] {
 
 .summary ol {
     list-style: none;
+}
+
+img {
+  display: block;
+  margin: 0 auto;
 }
